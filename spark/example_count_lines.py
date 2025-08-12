@@ -1,4 +1,5 @@
 import os
+
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 
@@ -7,9 +8,7 @@ BASE_PATH = os.getenv("BASE_PATH")
 
 if __name__ == "__main__":
     # Create Spark session
-    spark = SparkSession.builder \
-        .appName("CountLinesExample") \
-        .getOrCreate()
+    spark = SparkSession.builder.appName("CountLinesExample").getOrCreate()
 
     # Create an example text file
     file_path = f"{BASE_PATH}/spark/example_text_file.txt"

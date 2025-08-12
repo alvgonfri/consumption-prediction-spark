@@ -1,8 +1,10 @@
 import os
-from dotenv import load_dotenv
 from datetime import datetime
-from airflow import DAG
+
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from dotenv import load_dotenv
+
+from airflow import DAG
 
 load_dotenv()
 BASE_PATH = os.getenv("BASE_PATH")
