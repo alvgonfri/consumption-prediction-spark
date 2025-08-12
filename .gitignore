@@ -1,0 +1,56 @@
+# ============================
+# Python
+# ============================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+*.log
+*.tmp
+*.out
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# ============================
+# Airflow
+# ============================
+# Logs and database files
+airflow/logs/
+airflow/airflow.db
+airflow/airflow.sqlite
+airflow/unittests.cfg
+
+# Airflow config
+airflow/airflow.cfg
+airflow/simple_auth_manager_passwords.json.generated
+
+# ============================
+# Data files
+# ============================
+data/raw/*
+!data/raw/.gitkeep
+
+# ============================
+# Environment & Secrets
+# ============================
+.env
+*.key
+*.pem
+*.crt
+
+# ============================
+# VS Code
+# ============================
+.vscode/
+.history/
