@@ -40,6 +40,8 @@ airflow/simple_auth_manager_passwords.json.generated
 # ============================
 data/raw/*
 !data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
 
 # ============================
 # Environment & Secrets
