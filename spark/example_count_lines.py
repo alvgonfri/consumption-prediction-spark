@@ -6,7 +6,8 @@ from pyspark.sql import SparkSession
 load_dotenv()
 BASE_PATH = os.getenv("BASE_PATH")
 
-if __name__ == "__main__":
+
+def count_lines():
     # Create Spark session
     spark = SparkSession.builder.appName("CountLinesExample").getOrCreate()
 
@@ -31,3 +32,6 @@ if __name__ == "__main__":
 
     # Stop Spark session
     spark.stop()
+
+
+count_lines()
