@@ -16,11 +16,18 @@ with DAG(
     catchup=False,
 ) as dag:
 
-    spark_task = SparkSubmitOperator(
+    data_ingestion = SparkSubmitOperator(
         task_id="data_ingestion",
         application=f"{BASE_PATH}/spark/data_ingestion.py",
         conn_id="spark_default",
         verbose=True,
     )
 
-    spark_task
+    preprocessing = SparkSubmitOperator(
+        task_id="preprocessing",
+        application=f"{BASE_PATH}/spark/preprocessing.py",
+        conn_id="spark_default",
+        verbose=True,
+    )
+
+    data_ingestion >> preprocessing

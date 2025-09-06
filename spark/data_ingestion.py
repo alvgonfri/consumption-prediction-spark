@@ -47,16 +47,20 @@ def data_ingestion():
 
     df = df.filter(month_condition | day_condition | hour_condition | minute_condition)
 
+    # Save the filtered DataFrame in Parquet format
+    output_path = os.path.join(BASE_PATH, "data", "processed", "data.parquet")
+    df.write.mode("overwrite").parquet(output_path)
+
     # Show the DataFrame
-    df.show(truncate=False)
+    # df.show(truncate=False)
 
-    print(f"Number of rows: {df.count()}")
+    # print(f"Number of rows: {df.count()}")
 
-    df_grouped = df.groupBy("customer").count()
+    # df_grouped = df.groupBy("customer").count()
 
-    df_grouped.orderBy(df_grouped["count"].desc()).show(truncate=False)
+    # df_grouped.orderBy(df_grouped["count"].desc()).show(truncate=False)
 
-    df_grouped.orderBy(df_grouped["count"].asc()).show(truncate=False)
+    # df_grouped.orderBy(df_grouped["count"].asc()).show(truncate=False)
 
     spark.stop()
 
