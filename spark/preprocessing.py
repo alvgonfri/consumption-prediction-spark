@@ -13,7 +13,6 @@ BASE_PATH = os.getenv("BASE_PATH")
 def preprocessing():
     spark = SparkSession.builder.appName("Preprocessing").getOrCreate()
 
-    # Read Parquet file
     file_path = os.path.join(BASE_PATH, "data", "processed", "data.parquet")
     df = spark.read.parquet(file_path)
 
@@ -53,7 +52,7 @@ def preprocessing():
             ),
         )
 
-    # ======================= Add statistics for the previous 24 and 48 hours =======================
+    # ======================= Add consumption statistics for the previous 24 and 48 hours =======================
     window_24h = (
         Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-24, -1)
     )
@@ -113,7 +112,76 @@ def preprocessing():
         ),
     )
 
-    # df = df.dropna()
+    # ======================= Add temperature statistics for the previous 24 and 48 hours =======================
+    df.withColumnRenamed("temperature", "temp_h")
+
+    window_temp_24h = (
+        Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-24, -1)
+    )
+    window_temp_48h = (
+        Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-48, -1)
+    )
+
+    df = df.withColumn(
+        "temp_min_24h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.min("temp_h").over(window_temp_24h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_max_24h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.max("temp_h").over(window_temp_24h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_mean_24h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.mean("temp_h").over(window_temp_24h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_std_24h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.stddev("temp_h").over(window_temp_24h),
+        ),
+    )
+
+    df = df.withColumn(
+        "temp_min_48h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.min("temp_h").over(window_temp_48h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_max_48h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.max("temp_h").over(window_temp_48h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_mean_48h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.mean("temp_h").over(window_temp_48h),
+        ),
+    )
+    df = df.withColumn(
+        "temp_std_48h",
+        F.when(
+            F.count("temp_h").over(window_temp_48h) >= 48,
+            F.stddev("temp_h").over(window_temp_48h),
+        ),
+    )
+
+    # ======================= Drop rows with null values =======================
+    df = df.dropna()
 
     df.show(100, truncate=False)
 
