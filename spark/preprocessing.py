@@ -19,11 +19,8 @@ def preprocessing():
     # ======================= Add day_of_week column =======================
     es_holidays = holidays.Spain(years=[2019])
     holiday_dates = [d.strftime("%Y-%m-%d") for d in es_holidays.keys()]
-    print(f"Holiday dates: {holiday_dates}")
 
-    df = df.withColumn("date_only", F.to_date("date")).withColumn(
-        "hour", F.hour("date")
-    )
+    df = df.withColumn("date_only", F.to_date("date"))
 
     df = df.withColumn(
         "day_of_week",
@@ -113,7 +110,7 @@ def preprocessing():
     )
 
     # ======================= Add temperature statistics for the previous 24 and 48 hours =======================
-    df.withColumnRenamed("temperature", "temp_h")
+    df = df.withColumnRenamed("temperature", "temp_h")
 
     window_temp_24h = (
         Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-24, -1)
@@ -183,7 +180,29 @@ def preprocessing():
     # ======================= Drop rows with null values =======================
     df = df.dropna()
 
-    df.show(100, truncate=False)
+    # ======================= Split the dataset into train, validation, and test sets =======================
+
+    # Calculate the cutoff dates for splitting
+    train_frac = 0.7
+    val_frac = 0.15
+
+    min_date, max_date = df.agg(F.min("date"), F.max("date")).first()
+
+    total_hours = (max_date - min_date).days * 24 + (
+        max_date - min_date
+    ).seconds // 3600
+
+    train_cutoff = min_date + F.expr(f"INTERVAL {int(total_hours * train_frac)} HOURS")
+    val_cutoff = min_date + F.expr(
+        f"INTERVAL {int(total_hours * (train_frac + val_frac))} HOURS"
+    )
+
+    # Split the DataFrame
+    train_df = df.filter(F.col("date") <= train_cutoff)
+    val_df = df.filter((F.col("date") > train_cutoff) & (F.col("date") <= val_cutoff))
+    test_df = df.filter(F.col("date") > val_cutoff)
+
+    # df.show(100, truncate=False)
 
     spark.stop()
 
