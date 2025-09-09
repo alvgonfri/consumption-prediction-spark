@@ -2,6 +2,8 @@ import os
 
 import holidays
 from dotenv import load_dotenv
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import OneHotEncoder, StringIndexer
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -37,6 +39,19 @@ def preprocessing():
     )
 
     df = df.drop("date_only")
+
+    # ======================= Apply one-hot encoding to day_of_week =======================
+    indexer = StringIndexer(inputCol="day_of_week", outputCol="day_of_week_index")
+
+    encoder = OneHotEncoder(
+        inputCols=["day_of_week_index"],
+        outputCols=["day_of_week_ohe"],
+    )
+
+    pipeline = Pipeline(stages=[indexer, encoder])
+    df = pipeline.fit(df).transform(df)
+
+    df = df.drop("day_of_week", "day_of_week_index")
 
     # ======================= Add columns with the consumption of the 12 previous hours =======================
     df = df.withColumnRenamed("consumption", "cons_h")
