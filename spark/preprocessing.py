@@ -195,6 +195,18 @@ def preprocessing():
     # ======================= Drop rows with null values =======================
     df = df.dropna()
 
+    # timestamps = [
+    #     "2019-06-24 20:00:00",
+    #     "2019-06-26 20:00:00",
+    #     "2019-06-28 20:00:00",
+    #     "2019-06-29 20:00:00",
+    #     "2019-06-30 20:00:00",
+    # ]
+
+    # df = df.filter(F.col("date").isin([F.to_timestamp(F.lit(ts)) for ts in timestamps]))
+
+    # df.show(truncate=False)
+
     # ======================= Split the dataset into train, validation, and test sets =======================
 
     # Calculate the cutoff dates for splitting
@@ -217,7 +229,21 @@ def preprocessing():
     val_df = df.filter((F.col("date") > train_cutoff) & (F.col("date") <= val_cutoff))
     test_df = df.filter(F.col("date") > val_cutoff)
 
-    # df.show(100, truncate=False)
+    # ========================= Drop unnecessary columns =========================
+    cols_to_drop = ["date", "customer"]
+
+    train_df = train_df.drop(*cols_to_drop)
+    val_df = val_df.drop(*cols_to_drop)
+    test_df = test_df.drop(*cols_to_drop)
+
+    # ======================= Save the datasets =======================
+    output_path = os.path.join(BASE_PATH, "data", "processed")
+
+    train_df.write.mode("overwrite").parquet(os.path.join(output_path, "train.parquet"))
+    val_df.write.mode("overwrite").parquet(os.path.join(output_path, "val.parquet"))
+    test_df.write.mode("overwrite").parquet(os.path.join(output_path, "test.parquet"))
+
+    # val_df.show(100, truncate=False)
 
     spark.stop()
 
