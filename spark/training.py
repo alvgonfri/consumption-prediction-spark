@@ -10,6 +10,7 @@ from pyspark.ml.regression import (
     LinearRegression,
     RandomForestRegressor,
 )
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
 from pyspark.sql import SparkSession
 
 load_dotenv()
@@ -65,13 +66,64 @@ def training():
     for name, model in models.items():
         print(f"\n=== {name} ===")
 
-        pipeline = Pipeline(stages=[assembler, scaler, model])
+        stages = (
+            [assembler] + ([scaler] if name == "Linear Regression" else []) + [model]
+        )
+        pipeline = Pipeline(stages=stages)
 
-        # Fit only on train
-        pipeline_model = pipeline.fit(train_df)
+        if name == "Linear Regression":
+            param_grid = (
+                ParamGridBuilder()
+                .addGrid(model.regParam, [0.0, 0.01, 0.1])
+                .addGrid(
+                    model.elasticNetParam, [0.0, 0.5, 1.0]
+                )  # Ridge, ElasticNet, Lasso
+                .build()
+            )
+        elif name == "Decision Tree":
+            param_grid = (
+                ParamGridBuilder()
+                .addGrid(model.maxDepth, [5, 10, 20])
+                .addGrid(model.minInstancesPerNode, [1, 5, 10])
+                .build()
+            )
+        elif name == "Random Forest":
+            param_grid = (
+                ParamGridBuilder()
+                .addGrid(model.numTrees, [20, 50, 100])
+                .addGrid(model.maxDepth, [5, 10, 20])
+                .build()
+            )
+        elif name == "Gradient-Boosted Tree":
+            param_grid = (
+                ParamGridBuilder()
+                .addGrid(model.maxDepth, [3, 5, 10])
+                .addGrid(model.maxIter, [20, 50, 100])
+                .build()
+            )
+
+        crossval = CrossValidator(
+            estimator=pipeline,
+            estimatorParamMaps=param_grid,
+            evaluator=evaluator_rmse,  # RMSE as main metric
+            numFolds=3,
+        )
+
+        cv_model = crossval.fit(train_df)
+
+        best_model = cv_model.bestModel
+
+        # Training metrics
+        train_predictions = best_model.transform(train_df)
+        rmse_train = evaluator_rmse.evaluate(train_predictions)
+        mae_train = evaluator_mae.evaluate(train_predictions)
+        r2_train = evaluator_r2.evaluate(train_predictions)
+        print(
+            f"Train -> RMSE: {rmse_train:.4f}, MAE: {mae_train:.4f}, R2: {r2_train:.4f}"
+        )
 
         # Validate
-        val_predictions = pipeline_model.transform(val_df)
+        val_predictions = best_model.transform(val_df)
         rmse_val = evaluator_rmse.evaluate(val_predictions)
         mae_val = evaluator_mae.evaluate(val_predictions)
         r2_val = evaluator_r2.evaluate(val_predictions)
@@ -80,7 +132,7 @@ def training():
         )
 
         # Test
-        test_predictions = pipeline_model.transform(test_df)
+        test_predictions = best_model.transform(test_df)
         rmse_test = evaluator_rmse.evaluate(test_predictions)
         mae_test = evaluator_mae.evaluate(test_predictions)
         r2_test = evaluator_r2.evaluate(test_predictions)
