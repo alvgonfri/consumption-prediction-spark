@@ -37,4 +37,11 @@ with DAG(
         verbose=True,
     )
 
-    data_ingestion >> preprocessing >> training
+    evaluation = SparkSubmitOperator(
+        task_id="evaluation",
+        application=f"{BASE_PATH}/spark/evaluation.py",
+        conn_id="spark_default",
+        verbose=True,
+    )
+
+    data_ingestion >> preprocessing >> training >> evaluation

@@ -44,6 +44,12 @@ data/processed/*
 !data/processed/.gitkeep
 
 # ============================
+# Models
+# ============================
+models/*
+!models/.gitkeep
+
+# ============================
 # Environment & Secrets
 # ============================
 .env
