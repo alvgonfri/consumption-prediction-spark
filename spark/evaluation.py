@@ -1,5 +1,8 @@
+import json
 import os
+import sqlite3
 import time
+from datetime import datetime
 
 from dotenv import load_dotenv
 from pyspark.ml import PipelineModel
@@ -8,6 +11,54 @@ from pyspark.sql import SparkSession
 
 load_dotenv()
 BASE_PATH = os.getenv("BASE_PATH")
+
+RUN_DATETIME = datetime.now().isoformat()
+
+
+def log_to_db(
+    model_name,
+    params,
+    inference_time,
+    rmse_train,
+    mae_train,
+    r2_train,
+    rmse_val,
+    mae_val,
+    r2_val,
+    rmse_test,
+    mae_test,
+    r2_test,
+    db_path=os.path.join(BASE_PATH, "db", "audit.db"),
+):
+    conn = sqlite3.connect(db_path)
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO audit (
+            model, run_datetime, params, inference_time,
+            rmse_train, mae_train, r2_train,
+            rmse_val, mae_val, r2_val,
+            rmse_test, mae_test, r2_test
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """,
+        (
+            model_name,
+            RUN_DATETIME,
+            params,
+            inference_time,
+            rmse_train,
+            mae_train,
+            r2_train,
+            rmse_val,
+            mae_val,
+            r2_val,
+            rmse_test,
+            mae_test,
+            r2_test,
+        ),
+    )
+    conn.commit()
+    conn.close()
 
 
 def evaluation():
@@ -47,18 +98,12 @@ def evaluation():
         rmse_train = evaluator_rmse.evaluate(train_predictions)
         mae_train = evaluator_mae.evaluate(train_predictions)
         r2_train = evaluator_r2.evaluate(train_predictions)
-        print(
-            f"Train -> RMSE: {rmse_train:.4f}, MAE: {mae_train:.4f}, R2: {r2_train:.4f}"
-        )
 
         # Validate
         val_predictions = model.transform(val_df)
         rmse_val = evaluator_rmse.evaluate(val_predictions)
         mae_val = evaluator_mae.evaluate(val_predictions)
         r2_val = evaluator_r2.evaluate(val_predictions)
-        print(
-            f"Validation -> RMSE: {rmse_val:.4f}, MAE: {mae_val:.4f}, R2: {r2_val:.4f}"
-        )
 
         # Test
         start_time = time.time()
@@ -69,8 +114,30 @@ def evaluation():
         rmse_test = evaluator_rmse.evaluate(test_predictions)
         mae_test = evaluator_mae.evaluate(test_predictions)
         r2_test = evaluator_r2.evaluate(test_predictions)
-        print(f"Test -> RMSE: {rmse_test:.4f}, MAE: {mae_test:.4f}, R2: {r2_test:.4f}")
-        print(f"Test inference time: {inference_time:.4f} seconds")
+
+        # ===================== Log results to DB ======================
+        params_path = os.path.join(model_path, "params.json")
+        if os.path.exists(params_path):
+            with open(params_path, "r") as f:
+                params = json.load(f)
+            params_str = json.dumps(params)
+        else:
+            params_str = None
+
+        log_to_db(
+            model_name=name,
+            params=params_str,
+            inference_time=inference_time,
+            rmse_train=rmse_train,
+            mae_train=mae_train,
+            r2_train=r2_train,
+            rmse_val=rmse_val,
+            mae_val=mae_val,
+            r2_val=r2_val,
+            rmse_test=rmse_test,
+            mae_test=mae_test,
+            r2_test=r2_test,
+        )
 
     spark.stop()
 
