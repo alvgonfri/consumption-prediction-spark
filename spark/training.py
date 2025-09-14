@@ -1,3 +1,4 @@
+import json
 import os
 
 from dotenv import load_dotenv
@@ -106,6 +107,27 @@ def training():
         best_model = cv_model.bestModel
         model_path = os.path.join(BASE_PATH, "models", name.replace(" ", "_").lower())
         best_model.write().overwrite().save(model_path)
+
+        # Save best hyperparameters
+        if name == "Linear Regression":
+            param_names = ["regParam", "elasticNetParam"]
+        elif name == "Decision Tree":
+            param_names = ["maxDepth", "minInstancesPerNode"]
+        elif name == "Random Forest":
+            param_names = ["numTrees", "maxDepth"]
+        elif name == "Gradient-Boosted Tree":
+            param_names = ["maxDepth", "maxIter"]
+        else:
+            param_names = []
+
+        params = {
+            param[0].name: param[1]
+            for param in best_model.stages[-1].extractParamMap().items()
+            if param[0].name in param_names
+        }
+
+        with open(os.path.join(model_path, "params.json"), "w") as f:
+            json.dump(params, f, indent=4)
 
     spark.stop()
 
