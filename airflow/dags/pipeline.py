@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
+from airflow.providers.standard.operators.bash import BashOperator
 from dotenv import load_dotenv
 
 from airflow import DAG
@@ -44,4 +45,9 @@ with DAG(
         verbose=True,
     )
 
-    data_ingestion >> preprocessing >> training >> evaluation
+    model_selection = BashOperator(
+        task_id="model_selection",
+        bash_command=f"python {BASE_PATH}/scripts/model_selection.py",
+    )
+
+    data_ingestion >> preprocessing >> training >> evaluation >> model_selection
