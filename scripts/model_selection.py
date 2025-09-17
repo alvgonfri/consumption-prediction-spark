@@ -8,9 +8,9 @@ load_dotenv()
 BASE_PATH = os.getenv("BASE_PATH")
 
 WEIGHTS = {
-    "rmse_test": 0.45,
+    "rmse_test": 0.40,
     "mae_test": 0.20,
-    "r2_test": 0.15,
+    "r2_test": 0.20,
     "generalization_score": 0.10,
     "inference_time": 0.10,
 }
@@ -31,20 +31,12 @@ def normalize(series, higher_is_better=True):
     min_val = series.min()
     max_val = series.max()
 
-    denom = max_val - min_val + 1e-8
+    denom = max_val - min_val + 1e-10  # Avoid division by zero
 
     if higher_is_better:
         return (series - min_val) / denom
     else:
         return (max_val - series) / denom
-
-
-def rank_normalize(series, higher_is_better=True):
-    ranked = series.rank()
-    if higher_is_better:
-        return (ranked - 1) / (len(series) - 1)
-    else:
-        return (len(series) - ranked) / (len(series) - 1)
 
 
 def model_selection():
