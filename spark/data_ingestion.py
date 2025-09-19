@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
@@ -17,32 +17,34 @@ def data_ingestion():
 
     df = spark.read.csv(file_path, header=True, inferSchema=True)
 
-    # Filter rows based on current date and time
+    # Filter rows older than current date minus 2 days
     now = datetime.now()
-    current_month = now.month
-    current_day = now.day
-    current_hour = now.hour
-    current_minute = now.minute
+    limit = now - timedelta(days=2)
 
-    print(f"Current date and time: {now}")
+    limit_month = limit.month
+    limit_day = limit.day
+    limit_hour = limit.hour
+    limit_minute = limit.minute
 
-    month_condition = F.month("date") < current_month
+    print(f"Limit date and time: {limit}")
 
-    day_condition = (F.month("date") == current_month) & (
-        F.dayofmonth("date") < current_day
+    month_condition = F.month("date") < limit_month
+
+    day_condition = (F.month("date") == limit_month) & (
+        F.dayofmonth("date") < limit_day
     )
 
     hour_condition = (
-        (F.month("date") == current_month)
-        & (F.dayofmonth("date") == current_day)
-        & (F.hour("date") < current_hour)
+        (F.month("date") == limit_month)
+        & (F.dayofmonth("date") == limit_day)
+        & (F.hour("date") < limit_hour)
     )
 
     minute_condition = (
-        (F.month("date") == current_month)
-        & (F.dayofmonth("date") == current_day)
-        & (F.hour("date") == current_hour)
-        & (F.minute("date") <= current_minute)
+        (F.month("date") == limit_month)
+        & (F.dayofmonth("date") == limit_day)
+        & (F.hour("date") == limit_hour)
+        & (F.minute("date") <= limit_minute)
     )
 
     df = df.filter(month_condition | day_condition | hour_condition | minute_condition)
