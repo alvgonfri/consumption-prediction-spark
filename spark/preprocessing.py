@@ -253,14 +253,6 @@ def preprocessing():
     val_df = df.filter((F.col("date") > train_cutoff) & (F.col("date") <= val_cutoff))
     test_df = df.filter(F.col("date") > val_cutoff)
 
-    # Order test set by date descending
-    show = test_df.orderBy(F.col("date").desc())
-    show.show(truncate=False)
-
-    # Group df_predict by date and count and show the result
-    df_grouped = df_predict.groupBy("date").count()
-    df_grouped.show(100, truncate=False)
-
     # ========================= Drop unnecessary columns =========================
     cols_to_drop = ["date", "customer", "temp_h"]
 
@@ -268,7 +260,10 @@ def preprocessing():
     val_df = val_df.drop(*cols_to_drop)
     test_df = test_df.drop(*cols_to_drop)
 
-    cols_to_drop_predict = cols_to_drop + ["cons_h"]  # Also drop the target column
+    cols_to_drop_predict = [
+        "temp_h",
+        "cons_h",
+    ]  # Keep date and customer for prediction results
     df_predict = df_predict.drop(*cols_to_drop_predict)
 
     # ======================= Save the datasets =======================
@@ -281,8 +276,6 @@ def preprocessing():
     df_predict.write.mode("overwrite").parquet(
         os.path.join(output_path, "predict.parquet")
     )
-
-    df_predict.show(truncate=False)
 
     spark.stop()
 

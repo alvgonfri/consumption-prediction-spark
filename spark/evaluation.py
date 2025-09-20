@@ -74,11 +74,12 @@ def evaluation():
 
     # ====================== Evaluate all models ======================
     for name in os.listdir(models_path):
-        if not os.path.isdir(os.path.join(models_path, name)):
+        if not os.path.isdir(os.path.join(models_path, name)) or name == "best_model":
             continue
 
-        model_path = os.path.join(models_path, name)
         print(f"\n=== Evaluating {name} ===")
+
+        model_path = os.path.join(models_path, name)
         model = PipelineModel.load(model_path)
 
         # Evaluators

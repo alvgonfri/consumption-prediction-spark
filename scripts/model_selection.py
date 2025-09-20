@@ -107,5 +107,11 @@ def model_selection():
         }
     )
 
+    # ====================== Update best model symlink ======================
+    best_model_path = os.path.join(BASE_PATH, "models", "best_model")
+    if os.path.exists(best_model_path):
+        os.remove(best_model_path)
+    os.symlink(os.path.join(BASE_PATH, "models", best_model["model"]), best_model_path)
+
 
 model_selection()

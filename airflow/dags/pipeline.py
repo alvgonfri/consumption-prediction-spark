@@ -50,4 +50,18 @@ with DAG(
         bash_command=f"python {BASE_PATH}/scripts/model_selection.py",
     )
 
-    data_ingestion >> preprocessing >> training >> evaluation >> model_selection
+    prediction = SparkSubmitOperator(
+        task_id="prediction",
+        application=f"{BASE_PATH}/spark/prediction.py",
+        conn_id="spark_default",
+        verbose=True,
+    )
+
+    (
+        data_ingestion
+        >> preprocessing
+        >> training
+        >> evaluation
+        >> model_selection
+        >> prediction
+    )
