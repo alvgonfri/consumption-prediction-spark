@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 
 import holidays
 from dotenv import load_dotenv
@@ -17,6 +18,23 @@ def preprocessing():
 
     file_path = os.path.join(BASE_PATH, "data", "processed", "data.parquet")
     df = spark.read.parquet(file_path)
+
+    # ======================= Add hour to be predicted =======================
+    # Get max date
+    max_date = df.agg(F.max("date")).first()[0]
+
+    # Add 1 hour to max date
+    hour_to_predict = max_date + timedelta(hours=1)
+
+    # Add new rows with hour_to_predict for each customer
+    customers = df.select("customer").distinct().collect()
+    new_rows = spark.createDataFrame(
+        [
+            (hour_to_predict, row["customer"], -1.0, -1.0) for row in customers
+        ],  # Consumption and temperature set to -1.0 as it is unknown
+        schema=df.schema,
+    )
+    df = df.union(new_rows)
 
     # ======================= Add day_of_week column =======================
     es_holidays = holidays.Spain(years=[2019])
@@ -207,7 +225,13 @@ def preprocessing():
 
     # df.show(truncate=False)
 
-    # ======================= Split the dataset into train, validation, and test sets =======================
+    # ======================= Split the dataset into last 48 hours (to predict) and the rest =======================
+    max_date = df.agg(F.max("date")).first()[0]
+    cutoff_date = max_date - F.expr("INTERVAL 48 HOURS")
+    df_predict = df.filter(F.col("date") > cutoff_date)
+    df = df.filter(F.col("date") <= cutoff_date)
+
+    # ======================= Split the dataset (except last 48 hours) into train, val and test sets =======================
 
     # Calculate the cutoff dates for splitting
     train_frac = 0.7
@@ -229,12 +253,23 @@ def preprocessing():
     val_df = df.filter((F.col("date") > train_cutoff) & (F.col("date") <= val_cutoff))
     test_df = df.filter(F.col("date") > val_cutoff)
 
+    # Order test set by date descending
+    show = test_df.orderBy(F.col("date").desc())
+    show.show(truncate=False)
+
+    # Group df_predict by date and count and show the result
+    df_grouped = df_predict.groupBy("date").count()
+    df_grouped.show(100, truncate=False)
+
     # ========================= Drop unnecessary columns =========================
-    cols_to_drop = ["date", "customer"]
+    cols_to_drop = ["date", "customer", "temp_h"]
 
     train_df = train_df.drop(*cols_to_drop)
     val_df = val_df.drop(*cols_to_drop)
     test_df = test_df.drop(*cols_to_drop)
+
+    cols_to_drop_predict = cols_to_drop + ["cons_h"]  # Also drop the target column
+    df_predict = df_predict.drop(*cols_to_drop_predict)
 
     # ======================= Save the datasets =======================
     output_path = os.path.join(BASE_PATH, "data", "processed")
@@ -243,7 +278,11 @@ def preprocessing():
     val_df.write.mode("overwrite").parquet(os.path.join(output_path, "val.parquet"))
     test_df.write.mode("overwrite").parquet(os.path.join(output_path, "test.parquet"))
 
-    # val_df.show(100, truncate=False)
+    df_predict.write.mode("overwrite").parquet(
+        os.path.join(output_path, "predict.parquet")
+    )
+
+    df_predict.show(truncate=False)
 
     spark.stop()
 
