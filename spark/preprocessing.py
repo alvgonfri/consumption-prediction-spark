@@ -19,22 +19,22 @@ def preprocessing():
     file_path = os.path.join(BASE_PATH, "data", "processed", "data.parquet")
     df = spark.read.parquet(file_path)
 
-    # ======================= Add hour to be predicted =======================
-    # Get max date
-    max_date = df.agg(F.max("date")).first()[0]
-
-    # Add 1 hour to max date
-    hour_to_predict = max_date + timedelta(hours=1)
-
-    # Add new rows with hour_to_predict for each customer
+    # ======================= Add hours to be predicted =======================
+    last_date = df.agg(F.max("date")).first()[0]
     customers = df.select("customer").distinct().collect()
-    new_rows = spark.createDataFrame(
-        [
-            (hour_to_predict, row["customer"], -1.0, -1.0) for row in customers
-        ],  # Consumption and temperature set to -1.0 as it is unknown
-        schema=df.schema,
-    )
-    df = df.union(new_rows)
+
+    # Add new rows for the next 24 hours for each customer
+    new_rows = []
+    for i in range(1, 25):
+        hour_to_predict = last_date + timedelta(hours=i)
+
+        new_rows.extend(
+            [(hour_to_predict, row["customer"], -1.0, -1.0) for row in customers]
+        )  # Consumption and temperature set to -1.0 as they are unknown
+
+    new_rows_df = spark.createDataFrame(new_rows, schema=df.schema)
+
+    df = df.union(new_rows_df)
 
     # ======================= Add day_of_week column =======================
     es_holidays = holidays.Spain(years=[2019])
@@ -70,6 +70,13 @@ def preprocessing():
     df = pipeline.fit(df).transform(df)
 
     df = df.drop("day_of_week", "day_of_week_index")
+
+    # ======================= Split the dataset into data to predict and the rest =======================
+    first_prediction_date = last_date + timedelta(hours=1)
+    cutoff_date = first_prediction_date - F.expr("INTERVAL 48 HOURS")
+
+    df_predict = df.filter(F.col("date") >= cutoff_date)
+    df = df.filter(F.col("date") < cutoff_date)
 
     # ======================= Add columns with the consumption of the 12 previous hours =======================
     df = df.withColumnRenamed("consumption", "cons_h")
@@ -225,13 +232,7 @@ def preprocessing():
 
     # df.show(truncate=False)
 
-    # ======================= Split the dataset into last 48 hours (to predict) and the rest =======================
-    max_date = df.agg(F.max("date")).first()[0]
-    cutoff_date = max_date - F.expr("INTERVAL 48 HOURS")
-    df_predict = df.filter(F.col("date") > cutoff_date)
-    df = df.filter(F.col("date") <= cutoff_date)
-
-    # ======================= Split the dataset (except last 48 hours) into train, val and test sets =======================
+    # ======================= Split the dataset into train, val and test sets =======================
 
     # Calculate the cutoff dates for splitting
     train_frac = 0.7
@@ -259,12 +260,6 @@ def preprocessing():
     train_df = train_df.drop(*cols_to_drop)
     val_df = val_df.drop(*cols_to_drop)
     test_df = test_df.drop(*cols_to_drop)
-
-    cols_to_drop_predict = [
-        "temp_h",
-        "cons_h",
-    ]  # Keep date and customer for prediction results
-    df_predict = df_predict.drop(*cols_to_drop_predict)
 
     # ======================= Save the datasets =======================
     output_path = os.path.join(BASE_PATH, "data", "processed")

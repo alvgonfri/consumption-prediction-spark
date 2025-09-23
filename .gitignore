@@ -22,6 +22,9 @@ venv/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+# Spark checkpoints
+spark/checkpoints/
+
 # ============================
 # Airflow
 # ============================
@@ -42,6 +45,8 @@ data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
+data/predictions/*
+!data/predictions/.gitkeep
 
 # ============================
 # Models
