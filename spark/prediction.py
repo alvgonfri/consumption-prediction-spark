@@ -11,18 +11,10 @@ from pyspark.sql.window import Window
 
 load_dotenv()
 BASE_PATH = os.getenv("BASE_PATH")
-DRIVER_MEMORY = os.getenv("DRIVER_MEMORY")
-EXECUTOR_MEMORY = os.getenv("EXECUTOR_MEMORY")
 
 
 def prediction():
-    spark = (
-        SparkSession.builder.appName("Prediction")
-        .config("spark.master", "local[*]")
-        .config("spark.driver.memory", f"{DRIVER_MEMORY}g")
-        .config("spark.executor.memory", f"{EXECUTOR_MEMORY}g")
-        .getOrCreate()
-    )
+    spark = SparkSession.builder.appName("Prediction").getOrCreate()
 
     spark.sparkContext.setCheckpointDir(os.path.join(BASE_PATH, "spark", "checkpoints"))
 
@@ -294,12 +286,10 @@ def prediction():
         df_predict = df_predict.checkpoint(eager=True)
 
     # ======================= Save the predictions in CSV ========================
-    output_path = os.path.join(BASE_PATH, "data", "predictions")
-
     df_predict.filter(F.col("date") > last_date).select(
         "date", "customer", "cons_h"
-    ).write.mode("overwrite").csv(
-        os.path.join(output_path, "predictions.csv"), header=True
+    ).toPandas().to_csv(
+        os.path.join(BASE_PATH, "data", "predictions", "predictions.csv"), index=False
     )
 
     # Clean up checkpoints directory
