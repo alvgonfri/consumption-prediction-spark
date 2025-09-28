@@ -254,13 +254,6 @@ def preprocessing():
     val_df = df.filter((F.col("date") > train_cutoff) & (F.col("date") <= val_cutoff))
     test_df = df.filter(F.col("date") > val_cutoff)
 
-    # ========================= Drop unnecessary columns =========================
-    cols_to_drop = ["date", "customer", "temp_h"]
-
-    train_df = train_df.drop(*cols_to_drop)
-    val_df = val_df.drop(*cols_to_drop)
-    test_df = test_df.drop(*cols_to_drop)
-
     # ======================= Save the datasets =======================
     output_path = os.path.join(BASE_PATH, "data", "processed")
 

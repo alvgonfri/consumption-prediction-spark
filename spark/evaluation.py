@@ -72,27 +72,37 @@ def evaluation():
 
     models_path = os.path.join(BASE_PATH, "models")
 
+    # ========================= Drop unnecessary columns =========================
+    cols_to_drop = ["date", "customer", "temp_h"]
+
+    train_df = train_df.drop(*cols_to_drop)
+    val_df = val_df.drop(*cols_to_drop)
+    test_df = test_df.drop(*cols_to_drop)
+
     # ====================== Evaluate all models ======================
+    target_col = "cons_h"
+
+    evaluator_rmse = RegressionEvaluator(
+        labelCol=target_col, predictionCol="prediction", metricName="rmse"
+    )
+    evaluator_mae = RegressionEvaluator(
+        labelCol=target_col, predictionCol="prediction", metricName="mae"
+    )
+    evaluator_r2 = RegressionEvaluator(
+        labelCol=target_col, predictionCol="prediction", metricName="r2"
+    )
+
     for name in os.listdir(models_path):
-        if not os.path.isdir(os.path.join(models_path, name)) or name == "best_model":
+        if not os.path.isdir(os.path.join(models_path, name)) or name in [
+            "clustering",
+            "best_model",
+        ]:
             continue
 
         print(f"\n=== Evaluating {name} ===")
 
         model_path = os.path.join(models_path, name)
         model = PipelineModel.load(model_path)
-
-        # Evaluators
-        target_col = "cons_h"
-        evaluator_rmse = RegressionEvaluator(
-            labelCol=target_col, predictionCol="prediction", metricName="rmse"
-        )
-        evaluator_mae = RegressionEvaluator(
-            labelCol=target_col, predictionCol="prediction", metricName="mae"
-        )
-        evaluator_r2 = RegressionEvaluator(
-            labelCol=target_col, predictionCol="prediction", metricName="r2"
-        )
 
         # Training metrics
         train_predictions = model.transform(train_df)

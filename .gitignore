@@ -53,6 +53,9 @@ data/predictions/*
 # ============================
 models/*
 !models/.gitkeep
+!models/clustering/
+models/clustering/*
+!models/clustering/.gitkeep
 
 # ============================
 # Database

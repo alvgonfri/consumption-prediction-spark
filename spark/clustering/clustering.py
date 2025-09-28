@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from pyspark.ml import Pipeline
 from pyspark.ml.clustering import KMeans
+from pyspark.ml.evaluation import ClusteringEvaluator
 from pyspark.ml.feature import StandardScaler, VectorAssembler
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
@@ -71,20 +72,44 @@ def clustering():
         .join(temp_corr_df, on="customer", how="left")
     )
 
-    # ======================= Clustering =======================
+    # ======================= Find optimal number of clusters =======================
     feature_cols = [c for c in final_df.columns if c != "customer"]
 
     assembler = VectorAssembler(inputCols=feature_cols, outputCol="features_assembled")
     scaler = StandardScaler(
         inputCol="features_assembled", outputCol="features", withMean=True, withStd=True
     )
-    kmeans = KMeans(k=5, seed=42, featuresCol="features", predictionCol="cluster")
 
-    pipeline = Pipeline(stages=[assembler, scaler, kmeans])
+    assembled_df = assembler.transform(final_df)
+    scaled_df = scaler.fit(assembled_df).transform(assembled_df)
 
-    model = pipeline.fit(final_df)
+    evaluator = ClusteringEvaluator(
+        featuresCol="features",
+        predictionCol="prediction",
+        metricName="silhouette",
+        distanceMeasure="squaredEuclidean",
+    )
 
-    clustered_df = model.transform(final_df).select("customer", "cluster")
+    best_k, best_score = None, -1
+    for k in range(2, 11):
+        kmeans = KMeans(
+            k=k, seed=42, featuresCol="features", predictionCol="prediction"
+        )
+        model = kmeans.fit(scaled_df)
+        preds = model.transform(scaled_df)
+        score = evaluator.evaluate(preds)
+        print(f"k={k}, silhouette={score:.4f}")
+        if score > best_score:
+            best_k, best_score = k, score
+
+    print(f"Best k = {best_k} (silhouette={best_score:.4f})")
+
+    # ======================= Final clustering with optimal k =======================
+    final_kmeans = KMeans(
+        k=best_k, seed=42, featuresCol="features", predictionCol="cluster"
+    )
+    final_model = final_kmeans.fit(scaled_df)
+    clustered_df = final_model.transform(scaled_df).select("customer", "cluster")
 
     clustered_df.show(truncate=False)
     clustered_df.groupBy("cluster").count().orderBy("cluster").show()

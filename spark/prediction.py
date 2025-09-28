@@ -80,86 +80,26 @@ def prediction():
             Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-48, -1)
         )
 
-        df_predict = df_predict.withColumn(
-            "cons_min_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
+        for stat, func in [
+            ("min", F.min),
+            ("max", F.max),
+            ("mean", F.mean),
+            ("std", F.stddev),
+        ]:
+            df_predict = df_predict.withColumn(
+                f"cons_{stat}_24h",
                 F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.min("cons_h").over(window_24h),
-                ),
-            ).otherwise(F.col("cons_min_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_max_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
+                    F.col("date") == hour_to_predict,
+                    func("cons_h").over(window_24h),
+                ).otherwise(F.col(f"cons_{stat}_24h")),
+            )
+            df_predict = df_predict.withColumn(
+                f"cons_{stat}_48h",
                 F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.max("cons_h").over(window_24h),
-                ),
-            ).otherwise(F.col("cons_max_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_mean_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.mean("cons_h").over(window_24h),
-                ),
-            ).otherwise(F.col("cons_mean_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_std_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.stddev("cons_h").over(window_24h),
-                ),
-            ).otherwise(F.col("cons_std_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_min_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.min("cons_h").over(window_48h),
-                ),
-            ).otherwise(F.col("cons_min_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_max_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.max("cons_h").over(window_48h),
-                ),
-            ).otherwise(F.col("cons_max_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_mean_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.mean("cons_h").over(window_48h),
-                ),
-            ).otherwise(F.col("cons_mean_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "cons_std_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("cons_h").over(window_48h) >= 48,
-                    F.stddev("cons_h").over(window_48h),
-                ),
-            ).otherwise(F.col("cons_std_48h")),
-        )
+                    F.col("date") == hour_to_predict,
+                    func("cons_h").over(window_48h),
+                ).otherwise(F.col(f"cons_{stat}_48h")),
+            )
 
         # ======================= Add temperature statistics for the previous 24 and 48 hours (just for the hour to predict) =======================
         window_temp_24h = (
@@ -169,86 +109,26 @@ def prediction():
             Window.partitionBy("customer").orderBy(F.col("date")).rowsBetween(-48, -1)
         )
 
-        df_predict = df_predict.withColumn(
-            "temp_min_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
+        for stat, func in [
+            ("min", F.min),
+            ("max", F.max),
+            ("mean", F.mean),
+            ("std", F.stddev),
+        ]:
+            df_predict = df_predict.withColumn(
+                f"temp_{stat}_24h",
                 F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.min("temp_h").over(window_temp_24h),
-                ),
-            ).otherwise(F.col("temp_min_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_max_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
+                    F.col("date") == hour_to_predict,
+                    func("temp_h").over(window_temp_24h),
+                ).otherwise(F.col(f"temp_{stat}_24h")),
+            )
+            df_predict = df_predict.withColumn(
+                f"temp_{stat}_48h",
                 F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.max("temp_h").over(window_temp_24h),
-                ),
-            ).otherwise(F.col("temp_max_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_mean_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.mean("temp_h").over(window_temp_24h),
-                ),
-            ).otherwise(F.col("temp_mean_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_std_24h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.stddev("temp_h").over(window_temp_24h),
-                ),
-            ).otherwise(F.col("temp_std_24h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_min_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.min("temp_h").over(window_temp_48h),
-                ),
-            ).otherwise(F.col("temp_min_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_max_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.max("temp_h").over(window_temp_48h),
-                ),
-            ).otherwise(F.col("temp_max_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_mean_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.mean("temp_h").over(window_temp_48h),
-                ),
-            ).otherwise(F.col("temp_mean_48h")),
-        )
-        df_predict = df_predict.withColumn(
-            "temp_std_48h",
-            F.when(
-                F.col("date") == hour_to_predict,
-                F.when(
-                    F.count("temp_h").over(window_temp_48h) >= 48,
-                    F.stddev("temp_h").over(window_temp_48h),
-                ),
-            ).otherwise(F.col("temp_std_48h")),
-        )
+                    F.col("date") == hour_to_predict,
+                    func("temp_h").over(window_temp_48h),
+                ).otherwise(F.col(f"temp_{stat}_48h")),
+            )
 
         # ======================= Make predictions for the hour to predict =======================
         predictions = model.transform(
