@@ -68,63 +68,34 @@ def training():
         )
         pipeline = Pipeline(stages=stages)
 
-        # if name == "Linear Regression":
-        #     param_grid = (
-        #         ParamGridBuilder()
-        #         .addGrid(model.regParam, [0.0, 0.01, 0.1])
-        #         .addGrid(
-        #             model.elasticNetParam, [0.0, 0.5, 1.0]
-        #         )  # Ridge, ElasticNet, Lasso
-        #         .build()
-        #     )
-        # elif name == "Decision Tree":
-        #     param_grid = (
-        #         ParamGridBuilder()
-        #         .addGrid(model.maxDepth, [5, 10, 20])
-        #         .addGrid(model.minInstancesPerNode, [1, 5, 10])
-        #         .build()
-        #     )
-        # elif name == "Random Forest":
-        #     param_grid = (
-        #         ParamGridBuilder()
-        #         .addGrid(model.numTrees, [20, 50, 100])
-        #         .addGrid(model.maxDepth, [5, 10, 20])
-        #         .build()
-        #     )
-        # elif name == "Gradient-Boosted Tree":
-        #     param_grid = (
-        #         ParamGridBuilder()
-        #         .addGrid(model.maxDepth, [3, 5, 10])
-        #         .addGrid(model.maxIter, [20, 50, 100])
-        #         .build()
-        #     )
-
         if name == "Linear Regression":
             param_grid = (
                 ParamGridBuilder()
-                .addGrid(model.regParam, [0.01])
-                .addGrid(model.elasticNetParam, [0.0])
+                .addGrid(model.regParam, [0.0, 0.01, 0.1])
+                .addGrid(
+                    model.elasticNetParam, [0.0, 0.5, 1.0]
+                )  # Ridge, ElasticNet, Lasso
                 .build()
             )
         elif name == "Decision Tree":
             param_grid = (
                 ParamGridBuilder()
-                .addGrid(model.maxDepth, [5])
-                .addGrid(model.minInstancesPerNode, [5])
+                .addGrid(model.maxDepth, [5, 10, 20])
+                .addGrid(model.minInstancesPerNode, [1, 5, 10])
                 .build()
             )
         elif name == "Random Forest":
             param_grid = (
                 ParamGridBuilder()
-                .addGrid(model.numTrees, [20])
-                .addGrid(model.maxDepth, [5])
+                .addGrid(model.numTrees, [20, 35, 50])
+                .addGrid(model.maxDepth, [5, 7, 10])
                 .build()
             )
         elif name == "Gradient-Boosted Tree":
             param_grid = (
                 ParamGridBuilder()
-                .addGrid(model.maxDepth, [3])
-                .addGrid(model.maxIter, [20])
+                .addGrid(model.maxDepth, [3, 4, 5])
+                .addGrid(model.maxIter, [20, 35, 50])
                 .build()
             )
 
