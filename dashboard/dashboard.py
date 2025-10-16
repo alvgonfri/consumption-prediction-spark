@@ -5,7 +5,7 @@ import altair as alt
 import numpy as np
 import pandas as pd
 import streamlit as st
-from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
+from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 
 def load_predictions(use_clustering: bool = False) -> pd.DataFrame:
@@ -45,16 +45,12 @@ def merge_pred_actual(pred: pd.DataFrame, actual: pd.DataFrame) -> pd.DataFrame:
 def compute_metrics(
     y_true: np.ndarray, y_pred: np.ndarray
 ) -> Tuple[float, float, float]:
-    """Compute MAE, RMSE, and R²"""
+    """Compute MAE and RMSE"""
     if len(y_true) == 0:
         return (float("nan"), float("nan"), float("nan"))
     mae = float(mean_absolute_error(y_true, y_pred))
     rmse = float(root_mean_squared_error(y_true, y_pred))
-    try:
-        r2 = float(r2_score(y_true, y_pred))
-    except Exception:
-        r2 = float("nan")
-    return mae, rmse, r2
+    return mae, rmse
 
 
 def aggregate_by_date(df: pd.DataFrame, agg_type: str = "sum") -> pd.DataFrame:
@@ -120,11 +116,11 @@ agg_sum = aggregate_by_date(merged_df, "sum")
 agg_mean = aggregate_by_date(merged_df, "mean")
 
 # Metrics
-mae_sum, rmse_sum, r2_global = compute_metrics(agg_sum["actual"], agg_sum["pred"])
-mae_mean, rmse_mean, _ = compute_metrics(agg_mean["actual"], agg_mean["pred"])
+mae_sum, rmse_sum = compute_metrics(agg_sum["actual"], agg_sum["pred"])
+mae_mean, rmse_mean = compute_metrics(agg_mean["actual"], agg_mean["pred"])
 
 # Layout
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
     st.subheader("Aggregated by SUM")
@@ -136,9 +132,6 @@ with col2:
     st.metric("MAE (mean)", f"{mae_mean:.6f}" if not math.isnan(mae_mean) else "N/A")
     st.metric("RMSE (mean)", f"{rmse_mean:.6f}" if not math.isnan(rmse_mean) else "N/A")
 
-with col3:
-    st.subheader("Overall Performance")
-    st.metric("R² (global)", f"{r2_global:.4f}" if not math.isnan(r2_global) else "N/A")
 
 # ====================== Comparative Line Charts ======================
 st.subheader("Comparative Line Charts")
@@ -185,7 +178,7 @@ customers_sorted = sorted(merged_df["customer"].unique())
 selected_customer = st.selectbox("Select customer", options=customers_sorted)
 
 cust_df = merged_df[merged_df["customer"] == selected_customer].sort_values("date")
-cust_mae, cust_rmse, cust_r2 = compute_metrics(cust_df["actual"], cust_df["pred"])
+cust_mae, cust_rmse = compute_metrics(cust_df["actual"], cust_df["pred"])
 
 cust_col1, cust_col2 = st.columns([1, 2])
 with cust_col1:

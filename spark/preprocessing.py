@@ -220,18 +220,6 @@ def preprocessing():
     # ======================= Drop rows with null values =======================
     df = df.dropna()
 
-    # timestamps = [
-    #     "2019-06-24 20:00:00",
-    #     "2019-06-26 20:00:00",
-    #     "2019-06-28 20:00:00",
-    #     "2019-06-29 20:00:00",
-    #     "2019-06-30 20:00:00",
-    # ]
-
-    # df = df.filter(F.col("date").isin([F.to_timestamp(F.lit(ts)) for ts in timestamps]))
-
-    # df.show(truncate=False)
-
     # ======================= Split the dataset into train, val and test sets =======================
 
     # Calculate the cutoff dates for splitting
