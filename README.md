@@ -1,5 +1,6 @@
-# Automated Energy Consumption Prediction System
+# ⚡ Automated Energy Consumption Prediction System
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-red.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alvgonfri/consumption-prediction-spark)
 
 Automated system for predicting household energy consumption, developed as part of a Master’s Thesis. The project integrates **Apache Airflow** for workflow orchestration and **Apache Spark** for distributed data processing and machine learning, providing a scalable and reproducible end-to-end solution.
@@ -8,7 +9,7 @@ The project implements a fully automated pipeline for short-term energy consumpt
 
 ---
 
-## Technologies used
+## 🛠️ Technologies used
 
 The key technologies employed in this project include:
 
@@ -20,7 +21,7 @@ The key technologies employed in this project include:
 
 ---
 
-## Project Structure
+## 🗂️ Project structure
 
 The project is organized into the following main directories and files:
 
@@ -40,7 +41,7 @@ The project is organized into the following main directories and files:
 
 ---
 
-## Dataset
+## 📈 Dataset
 
 The dataset used in this work, publicly available [here](https://fordatis.fraunhofer.de/handle/fordatis/215), contains information on energy consumption, measured in kilowatt-hours (kWh), from 499 anonymous customers located in Spain. The dataset covers the entire year of 2019, with observations recorded every hour.
 
@@ -48,7 +49,7 @@ In addition to energy consumption, meteorological data is also provided, specifi
 
 ---
 
-## Pipeline stages
+## 🧩 Pipeline stages
 
 The pipeline is composed of modular stages that automate the entire forecasting process:
 
@@ -63,6 +64,6 @@ An alternative pipeline version is incorporates a **clustering** step before mod
 
 ---
 
-## Visualization
+## 📊 Visualization
 
 An interactive **Streamlit dashboard** enables visual comparison between real and predicted energy consumption, both at an aggregate and individual level. It also allows switching between standard and cluster-based results, providing insights into model performance and forecast accuracy.
